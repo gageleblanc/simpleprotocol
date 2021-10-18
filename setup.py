@@ -5,7 +5,7 @@ import setuptools
 import simpleprotocol
 
 setuptools.setup(
-    name='simpleprotocol',
+    name='simple-protocol',
     version=simpleprotocol.__version__,
     scripts=[],
     author="Gage LeBlanc",
