@@ -1,5 +1,4 @@
 import socket
-
 from clilib.util.logging import Logging
 from typing import Type
 from simpleprotocol.tx import GenericTxBuilder, GenericResponseParser
