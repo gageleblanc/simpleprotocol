@@ -10,7 +10,7 @@ class SimpleProtocolClient:
         "RESPONSE"
     ]
     client_name = None
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str = "127.0.0.1", port: int = 3893):
         if self.client_name is None:
             self.client_name = "SimpleProtocolClient"
         self.host = host
@@ -36,25 +36,3 @@ class SimpleProtocolClient:
                 if not rec:
                     break
         return GenericResponseParser(data.decode("utf-8"))
-
-    # def _res_parts(self, data):
-    #     self.logger.debug(data)
-    #     data_parts = data.split("\n")
-    #     request_object = {
-    #         "STATUS": None,
-    #         "RESPONSE": None,
-    #         "TYPE": None
-    #     }
-    #     if len(data_parts) > 0:
-    #         for header in data_parts:
-    #             header_parts = header.split(":", 1)
-    #             key = header_parts[0]
-    #             self.logger.debug("Reading key: %s" % key)
-    #             if key.startswith("!"):
-    #                 self.logger.warn("Invalid key: %s" % key)
-    #             if key in self._headers:
-    #                 self.logger.debug("Valid key")
-    #                 request_object[header_parts[0]] = header_parts[1]
-    #     else:
-    #         self.logger.warn("Data sent is incomplete")
-    #     return SockemResponse(request_object)

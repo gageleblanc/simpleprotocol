@@ -27,26 +27,23 @@ class GenericTxParser:
     def _parse_response(self, response: str):
         res_dict = {}
         lines = response.split("\n")
-        # account for making sure header starts with abc, validation on header, value pairs, throw away stuff we don't trust, or store in metadata
         for line in lines:
             parts = line.split(":", 1)
             if len(parts) > 1:
                 key = parts[0].strip().lower()
                 val = parts[1].strip()
+                # Make sure key starts with alpha
                 if not re.match(r"\A[a-zA-Z]", key):
                     continue
                 if self._strict:
+                    # If strict, don't include headers that aren't in _headers
                     if key not in self._headers:
                         continue
                 res_dict[key] = val
-                # if key in self.valid_keys:
-                #     print("Valid key: %s" % key)
-                #     res_dict[key] = parts[1].strip()
-                # else:
-                #     print("Invalid line: %s" % line)
         if self._strict:
             for header in self._headers:
                 if header not in res_dict:
+                    # If strict, make sure payload contains required headers
                     raise ValueError("Required header %s not in payload.")
         return res_dict
 

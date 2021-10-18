@@ -29,6 +29,7 @@ class SimpleProtocolServer:
             if header not in self._headers:
                 self._headers.append(header)
 
+    # Accept single registration or dictionary of methods to register
     def register_handler(self, method: str = None, handler = None):
         if callable(handler):
             self._methods[method] = handler
@@ -37,6 +38,7 @@ class SimpleProtocolServer:
         else:
             raise TypeError("Handler supplied is not callable or dict of callables.")
 
+    # Accept single registration or dictionary of middleware to register
     def register_middleware(self, middleware):
         if callable(middleware):
             self._middleware.append(middleware)
@@ -81,27 +83,6 @@ class SimpleProtocolServer:
                 conn.sendall(str(m).encode("utf-8"))
                 conn.close()
 
-    # def _req_parts(self, data):
-    #     data_parts = data.split("\n")
-    #     request_object = {
-    #         "METHOD": None,
-    #         "PATH": None,
-    #         "!RAW": data
-    #     }
-    #     if len(data_parts) > 0:
-    #         for header in data_parts:
-    #             header_parts = header.split(":", 1)
-    #             key = header_parts[0]
-    #             self.logger.debug("Reading key: %s" % key)
-    #             if key.startswith("!"):
-    #                 self.logger.warn("Invalid key: %s" % key)
-    #             if key in self._headers:
-    #                 self.logger.debug("Valid key")
-    #                 request_object[header_parts[0]] = header_parts[1]
-    #     else:
-    #         self.logger.warn("Data sent is incomplete")
-    #     return GenericRequestParser(request_object)
-
     def _parse_req(self, request: GenericRequestParser):
         if request.method.lower() not in self._methods.keys():
             return GenericTxBuilder(status=500, response="Invalid method: %s" % request.method)
@@ -113,6 +94,7 @@ class SimpleProtocolServer:
                 self.logger.info("%s canceled request" % m.__name__)
                 return GenericTxBuilder(status=500, response="%s canceled request" % m.__name__)
         res = self._methods[request.method.lower()](request)
+        # Handler needs to return an instance of GenericTxBuilder
         if not isinstance(res, GenericTxBuilder):
             res = GenericTxBuilder(status=400, response="Handler did not return response object.")
         self.logger.info("Status %d for request with method [%s] (Response: %s)" % (res.status, request.method, res.response))
