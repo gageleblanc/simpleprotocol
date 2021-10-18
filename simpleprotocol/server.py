@@ -1,10 +1,7 @@
 import socket
 from threading import Thread
 from typing import Union
-
 from clilib.util.logging import Logging
-from object_storage.index.manifest import Manifest
-
 from simpleprotocol.errors import DataLengthMismatchException
 from simpleprotocol.tx import GenericRequestParser, GenericTxBuilder
 

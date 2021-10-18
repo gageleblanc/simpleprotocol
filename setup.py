@@ -13,7 +13,7 @@ setuptools.setup(
     description="Common library for spectre libs",
     #long_description=long_description,
     #long_description_content_type="text/markdown",
-    url="http://github.com/",
+    url="http://github.com/gageleblanc/simpleprotocol",
     install_requires=['clilib>=2.1.0'],
     packages=setuptools.find_packages(),
     classifiers=[
