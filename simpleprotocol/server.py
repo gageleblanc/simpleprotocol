@@ -91,8 +91,8 @@ class SimpleProtocolServer:
             if processed is not None and type(processed) == GenericRequestParser:
                 request = processed
             else:
-                self.logger.info("%s canceled request" % m.__name__)
-                return GenericTxBuilder(status=500, response="%s canceled request" % m.__name__)
+                self.logger.info("%s middleware canceled request" % m.__name__)
+                return GenericTxBuilder(status=500, response="%s canceled middleware request" % m.__name__)
         res = self._methods[request.method.lower()](request)
         # Handler needs to return an instance of GenericTxBuilder
         if not isinstance(res, GenericTxBuilder):

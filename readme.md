@@ -49,3 +49,40 @@ print(res.response) # "Hello"
 ```
 The `_send` method of `SimpleProtocolClient` always returns a `GenericResponseParser` object which contains the information
 returned from the server. 
+
+### Middleware
+SimpleProtocolServer supports registering middleware that can preprocess your requests. For instance, if you wanted to 
+implement authentication, you could create middleware to validate an authentication header:
+```python
+from simpleprotocol.server import SimpleProtocolServer
+from simpleprotocol.tx import GenericRequestParser, GenericTxBuilder
+
+# Initialize Server
+server = SimpleProtocolServer(server_name="Test Server")
+
+def handler_func(request: GenericRequestParser) -> GenericTxBuilder:
+    return GenericTxBuilder(status=200, response=request.value)
+
+def validate_authentication(request: GenericRequestParser):
+    valid_keys = ["a", "b", "cd"]
+    if hasattr(request, "authentication"):
+        if request.authentication in valid_keys:
+            return request
+        else:
+            return None
+    return None
+
+# Register Handler and "VALUE" request header
+server.register_handler("hello", handler_func)
+server.register_middleware(validate_authentication)
+server.register_header("VALUE")
+server.run_server()
+```
+In this example, we:
+ * Initialize a server
+ * Create a handler with method name "hello" 
+ * Register middleware to validate each requests authentication attribute 
+
+If middleware returns a request object, the request is allowed to proceed. If a middleware returns anything other than 
+a request object, the request is canceled. Middleware can also be used things like modifying a request, logging requests,
+access control for specific methods, etc.
