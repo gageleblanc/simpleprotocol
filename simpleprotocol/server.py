@@ -73,7 +73,7 @@ class SimpleProtocolServer:
                 if not rec:
                     break
             try:
-                req = GenericRequestParser(data.decode("utf-8"))
+                req = GenericRequestParser(data.decode("utf-8"), {"addr": addr[0], "port": addr[1]})
                 self.logger.debug("Request: \n%s" % str(req).encode("utf-8"))
                 res = self._parse_req(req)
                 conn.sendall(str(res).encode("utf-8"))

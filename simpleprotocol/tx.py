@@ -5,11 +5,12 @@ import re
 class GenericTxParser:
     default_headers = []
 
-    def __init__(self, raw: str, headers: list = None, strict: bool = False):
+    def __init__(self, raw: str, requester: dict = None, headers: list = None, strict: bool = False):
         if headers is None:
             headers = self.default_headers
         else:
             headers += self.default_headers
+        self.requester = requester
         self._headers = headers
         self._strict = strict
         attrs = self._parse_response(raw)
@@ -77,17 +78,3 @@ class GenericTxBuilder:
                 continue
             final += "%s:%s\n" % (key, value)
         return final + "\n\n"
-
-class ServerResponse:
-    def __init__(self, status: int, response, ty: str = "str"):
-        self.status = status
-        if ty.lower() == "json":
-            self.response = json.dumps(response)
-            self.response = self.response.replace("\n", " ")
-        else:
-            self.response = str(response)
-            self.response = self.response.replace("\n", " ")
-        self.type = ty.lower()
-
-    def __str__(self):
-        return "STATUS:%d\nTYPE:%s\nRESPONSE:%s\n\n" % (self.status, self.type.upper(), self.response)
