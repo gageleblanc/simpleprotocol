@@ -37,6 +37,7 @@ class SimpleProtocolServer:
             self._methods.update(**handler)
         else:
             raise TypeError("Handler supplied is not callable or dict of callables.")
+        self.logger.info("Registered handlers: %s" % ", ".join(self._methods.keys()))
 
     # Accept single registration or dictionary of middleware to register
     def register_middleware(self, middleware):
