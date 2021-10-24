@@ -25,6 +25,16 @@ class GenericTxParser:
             else:
                 setattr(self, k.lower(), v)
 
+    def __str__(self):
+        final = ""
+        for key, value in self._parsed_response.items():
+            if not re.match(r"\A[a-zA-Z]", key):
+                continue
+            if not value:
+                continue
+            final += "%s:%s\n" % (key, value)
+        return final + "\n\n"
+
     def _parse_response(self, response: str):
         res_dict = {}
         lines = response.split("\n")
