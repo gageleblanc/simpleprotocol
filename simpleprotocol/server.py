@@ -7,8 +7,6 @@ from simpleprotocol.tx import GenericRequestParser, GenericTxBuilder
 
 
 class SimpleProtocolServer:
-    _methods = dict()
-    _middleware = list()
     _headers = [
         "LEN",
         "METHOD",
@@ -19,6 +17,8 @@ class SimpleProtocolServer:
     def __init__(self, host: str = "127.0.0.1", port: int = 3893, debug: bool = False, server_name: str = "DefaultServerName"):
         self.bind_host = host
         self.bind_port = port
+        self._methods = dict()
+        self._middleware = list()
         self._methods = {}
         self.logger = Logging(server_name, "SimpleProtocolServer", debug=debug).get_logger()
 
