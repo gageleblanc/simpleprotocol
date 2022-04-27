@@ -17,6 +17,7 @@ class SimpleProtocolServer:
     def __init__(self, host: str = "127.0.0.1", port: int = 3893, debug: bool = False, server_name: str = "DefaultServerName"):
         self.bind_host = host
         self.bind_port = port
+        self.running = False
         self._methods = dict()
         self._middleware = list()
         self._methods = {}
@@ -49,12 +50,13 @@ class SimpleProtocolServer:
             raise TypeError("Middleware supplied is not callable or dict of callables.")
 
     def run_server(self):
+        self.running = True
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.bind_host, self.bind_port))
             s.listen()
             self.logger.info("Simple Protocol Server Listening on %s:%d" % (self.bind_host, self.bind_port))
             try:
-                while True:
+                while self.running:
                     conn, addr = s.accept()
                     Thread(target=self.accept_client, args=(conn, addr)).start()
             except KeyboardInterrupt as _:
