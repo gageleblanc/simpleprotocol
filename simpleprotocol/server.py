@@ -68,7 +68,7 @@ class SimpleProtocolServer:
             self.logger.info("Connected by %s" % ":".join(str(i) for i in addr))
             rec = conn.recv(8)
             data = rec
-            while True:
+            while self.running:
                 rec = conn.recv(8)
                 data += rec
                 if data.decode("utf-8").endswith("\n\n"):
