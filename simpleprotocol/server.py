@@ -54,14 +54,16 @@ class SimpleProtocolServer:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.bind_host, self.bind_port))
             s.listen()
+            s.settimeout(15)
             self.logger.info("Simple Protocol Server Listening on %s:%d" % (self.bind_host, self.bind_port))
-            try:
-                while self.running:
+            while self.running:
+                try:
                     conn, addr = s.accept()
                     Thread(target=self.accept_client, args=(conn, addr)).start()
-            except KeyboardInterrupt as _:
-                self.logger.info("User interrupt, closing server.")
-                s.close()
+                except socket.timeout:
+                    pass
+            self.logger.info("Closing server.")
+            s.close()
 
     def accept_client(self, conn, addr):
         with conn:
@@ -87,6 +89,9 @@ class SimpleProtocolServer:
                 conn.close()
 
     def _parse_req(self, request: GenericRequestParser):
+        if not hasattr(request, "method"):
+            self.logger.warn("Request does not have a method.")
+            return GenericTxBuilder(status=400, response="Request does not have a method.")
         if request.method.lower() not in self._methods.keys():
             return GenericTxBuilder(status=500, response="Invalid method: %s" % request.method)
         for m in self._middleware:

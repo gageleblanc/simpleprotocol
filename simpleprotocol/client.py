@@ -23,7 +23,7 @@ class SimpleProtocolClient:
                 s.connect((self.host, self.port))
             except ConnectionRefusedError as e:
                 self.logger.fatal("Unable to connect to SimpleProtocolServer at %s:%d, %s" % (self.host, self.port, str(e)))
-                exit(1)
+                raise e
             self.logger.debug(str(request))
             s.sendall(str(request).encode("utf-8"))
             rec = s.recv(8)
