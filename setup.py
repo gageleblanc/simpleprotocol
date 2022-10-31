@@ -8,13 +8,16 @@ setuptools.setup(
     name='simple-protocol',
     version=simpleprotocol.__version__,
     scripts=[],
+    entry_points={
+        'console_scripts': ["pup = simpleprotocol.v2.cli:main"]
+    },
     author="Gage LeBlanc",
     author_email="gleblanc@symnet.io",
     description="Common library for spectre libs",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="http://github.com/gageleblanc/simpleprotocol",
-    install_requires=['clilib>=2.1.0'],
+    install_requires=['clilib>=3.7.3'],
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

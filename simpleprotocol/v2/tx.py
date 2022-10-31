@@ -1,9 +1,6 @@
 import re
 import json
 
-test_request = "/test/path/foo_bar/baz\r\nContent-Type: application/json\r\nTest-Parameter: 123\r\n\r\n{\"foo\": \"bar\"}"
-test_response = "0 OK\r\nContent-Type: application/json\r\nTest-Parameter: 123\r\n\r\n{\"foo\": \"bar\"}"
-
 
 class ServerRequest:
     def __init__(self, request: str, encoding: str = "utf-8", json_body: bool = False):
@@ -92,12 +89,13 @@ class ServerResponse:
             response += f"{key}: {value}\r\n"
         response += "\r\n"
         if self.body:
-            response += self.body
+            response += str(self.body)
+        response += "\0\r\n"
         return response # .encode(self.encoding)
 
 
 class ClientResponse:
-    def __init__(self, response: str, encoding: str = "utf-8"):
+    def __init__(self, response: str, encoding: str = "utf-8", preprocessing_time: float = 0.0, connection_time: float = 0.0, data_time: float = 0.0, file_upload_time: float = 0.0, overall_time: float = 0.0, json_body: bool = False):
         """
         :param response: The response.
         """
@@ -111,6 +109,13 @@ class ClientResponse:
         self.body = None
         self.json_body = False
         self.parameters = {}
+        self.timings = {
+            "preprocessing": preprocessing_time,
+            "connection": connection_time,
+            "data": data_time,
+            "file_upload": file_upload_time,
+            "overall": overall_time
+        }
         self.parse()
     
     def __str__(self):
@@ -127,7 +132,11 @@ class ClientResponse:
             body = None
         self.header_raw = header
         self.body = body
-        status, parameters = header.split("\r\n", 1)
+        if "\r\n" in header:
+            status, parameters = header.split("\r\n", 1)
+        else:
+            status = header
+            parameters = ""
         if " " in status:
             status, reason = status.split(" ", 1)
             self.status = int(status)
@@ -150,6 +159,7 @@ class ClientResponse:
                 self.json_body = True
                 self.body = json.loads(self.body)
 
+
 class ClientRequest:
     def __init__(self, path: str, parameters: dict = {}, body: str = None, encoding: str = "utf-8", json_body: bool = False):
         """
@@ -160,6 +170,8 @@ class ClientRequest:
         :param json_body: Whether the body is JSON.
         """
         self.path = path
+        if self.path == "":
+            self.path = "/"
         self.encoding = encoding
         self.body = body
         self.json_body = json_body
@@ -185,5 +197,6 @@ class ClientRequest:
             request += f"{key}: {value}\r\n"
         request += "\r\n"
         if self.body:
-            request += self.body
+            request += str(self.body)
+        request += "\0\r\n"
         return request # .encode(self.encoding)
