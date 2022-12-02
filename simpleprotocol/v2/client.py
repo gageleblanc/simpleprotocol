@@ -31,15 +31,16 @@ class PupClient:
         if self.ssl_enabled:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(self.timeout)
-            self._ctx = ssl.create_default_context()
+            _ctx = ssl.create_default_context()
             if not self.validate_ssl:
-                self._ctx.check_hostname = False
-                self._ctx.verify_mode = ssl.CERT_NONE
+                _ctx.check_hostname = False
+                _ctx.verify_mode = ssl.CERT_NONE
             if self.ssl_cert is not None and self.ssl_key is not None:
-                self._ctx.load_cert_chain(self.ssl_cert, self.ssl_key)
-            self.socket = self._ctx.wrap_socket(sock, server_hostname=self.remote_host)
+                _ctx.load_cert_chain(self.ssl_cert, self.ssl_key)
+            _socket = _ctx.wrap_socket(sock, server_hostname=self.remote_host)
         else:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        return _socket
 
     def send_request(self, request: ClientRequest) -> ClientResponse:
         """
@@ -67,28 +68,28 @@ class PupClient:
             request.parameters["Files"] = ",".join(new_files)
         processing_time = time.time() - start_time
         connection_start = time.time()
-        self._configure_socket()
-        self.socket.connect((self.remote_host, self.remote_port))
+        _socket = self._configure_socket()
+        _socket.connect((self.remote_host, self.remote_port))
         connection_time = time.time() - connection_start
         data_start = time.time()
-        self.socket.sendall(socket_message(request.build()))
+        _socket.sendall(socket_message(request.build()))
         data_time = time.time() - data_start
         file_upload_start = time.time()
         for f in upload_files:
-            status = self.socket.recv(1).decode()
+            status = _socket.recv(1).decode()
             if status == "0":
-                send_file(self.socket, f)
+                send_file(_socket, f)
             else:
                 raise Exception("File upload failed")
         file_upload_time = time.time() - file_upload_start
 
-        response = receive_data(self.socket)
+        response = receive_data(_socket)
         # self.logger.info(response)
         overall_time = time.time() - start_time
         if response is not None:
             response = ClientResponse(response, preprocessing_time=processing_time, connection_time=connection_time, data_time=data_time, file_upload_time=file_upload_time, overall_time=overall_time)
-        self.socket.shutdown(socket.SHUT_RDWR)
-        self.socket.close()
+        _socket.shutdown(socket.SHUT_RDWR)
+        _socket.close()
         return response
 
 

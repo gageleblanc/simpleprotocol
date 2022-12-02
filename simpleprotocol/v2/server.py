@@ -110,9 +110,7 @@ class PupServer:
         :param conn: The connection.
         :param addr: The address.
         """
-        # buffer = DelimitedBuffer(conn, b"\r\n\r\n")
-        # raw_message = buffer.read()
-        # self.logger.info(raw_message)
+
         raw_message = receive_data(conn)
         if not raw_message:
             self.logger.error("({addr[0]}:{addr[1]}): No message received")
