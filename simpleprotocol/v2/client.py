@@ -19,15 +19,20 @@ class PupClient:
         """
         self.remote_host = remote_host
         self.remote_port = int(remote_port)
+        self.validate_ssl = validate_ssl
         self.ssl_enabled = ssl_enabled
         self.ssl_cert = ssl_cert
         self.ssl_key = ssl_key
         self.timeout = timeout
+
+        self.logger = Logging("PupClient").get_logger()
+
+    def _configure_socket(self):
         if self.ssl_enabled:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(self.timeout)
             self._ctx = ssl.create_default_context()
-            if not validate_ssl:
+            if not self.validate_ssl:
                 self._ctx.check_hostname = False
                 self._ctx.verify_mode = ssl.CERT_NONE
             if self.ssl_cert is not None and self.ssl_key is not None:
@@ -35,7 +40,6 @@ class PupClient:
             self.socket = self._ctx.wrap_socket(sock, server_hostname=self.remote_host)
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.logger = Logging("PupClient").get_logger()
 
     def send_request(self, request: ClientRequest) -> ClientResponse:
         """
@@ -63,6 +67,7 @@ class PupClient:
             request.parameters["Files"] = ",".join(new_files)
         processing_time = time.time() - start_time
         connection_start = time.time()
+        self._configure_socket()
         self.socket.connect((self.remote_host, self.remote_port))
         connection_time = time.time() - connection_start
         data_start = time.time()
@@ -82,7 +87,8 @@ class PupClient:
         overall_time = time.time() - start_time
         if response is not None:
             response = ClientResponse(response, preprocessing_time=processing_time, connection_time=connection_time, data_time=data_time, file_upload_time=file_upload_time, overall_time=overall_time)
-
+        self.socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
         return response
 
 

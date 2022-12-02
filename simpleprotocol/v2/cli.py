@@ -3,6 +3,8 @@ from clilib.builders.app import EasyCLI
 from simpleprotocol.v2.client import PupClient
 from simpleprotocol.v2.tools import print_out, print_in, strfdelta
 from simpleprotocol.v2.tx import ClientRequest
+from simpleprotocol.v2.server import PupServer
+from simpleprotocol.v2.proxy import PupProxy
 from urllib.parse import urlparse
 
 
@@ -24,6 +26,11 @@ def pup_client(url: str, authentication_type: str = None, token: str = None, fil
         ssl_enabled = True
     else:
         ssl_enabled = False
+    if url.port is None:
+        if ssl_enabled:
+            url.port = 7941
+        else:
+            url.port = 7940
     parameters = {}
     if url.query:
         for parameter in url.query.split("&"):
@@ -60,6 +67,17 @@ def pup_client(url: str, authentication_type: str = None, token: str = None, fil
             print(json.dumps(response.body, indent=4))
         else:
             print(response.body)
+
+def pup_proxy(server_config: str, bind_host: str = "0.0.0.0", bind_port: int = 7940, debug: bool = False):
+    """
+    Pup reverse proxy server
+    :param server_config: The server config file, required.
+    :param bind_host: The host to bind to.
+    :param bind_port: The port to bind to.
+    :param debug: Whether or not to enable debug mode.
+    """
+    proxy = PupProxy(bind_host, bind_port, server_config, debug=debug)
+    proxy.start_server()
 
 def main():
     EasyCLI(pup_client)

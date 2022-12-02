@@ -1,5 +1,6 @@
 import re
 import json
+import socket
 
 
 class ServerRequest:
@@ -20,6 +21,22 @@ class ServerRequest:
     
     def __str__(self):
         return f"Path: {self.path}\r\nParameters: {self.parameters}\r\nBody: {self.body}\r\n"
+
+    @classmethod
+    def from_socket(cls, conn: socket.socket, encoding: str = "utf-8", json_body: bool = False):
+        """
+        Create a ServerRequest from a socket connection.
+        :param conn: The socket connection.
+        """
+        request = ""
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            request += data.decode(encoding)
+            if request.endswith("\0\r\n"):
+                break
+        return cls(request, encoding, json_body)
 
     def parse(self):
         """

@@ -1,5 +1,6 @@
 from pathlib import Path
 import time
+import traceback
 from clilib.util.logging import Logging
 from simpleprotocol.v2.tx import ServerRequest, ServerResponse
 from simpleprotocol.v2.tools import receive_file, socket_message, receive_data
@@ -158,7 +159,7 @@ class PupServer:
                     new_files[file_name] = receive_file(conn, size=file_size)
                 except Exception as e:
                     self.logger.error(f"({addr[0]}:{addr[1]}): Error receiving file: {e}")
-                    response = ServerResponse(3, "Bad Request", "Error receiving file")
+                    response = ServerResponse(3, "Bad Request", f"Error receiving file: {file_name}")
                     return
             request.parameters["Files"] = new_files
 
@@ -176,7 +177,8 @@ class PupServer:
                 self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
                 conn.send(socket_message(response.build()))
             except Exception as e:
-                self.logger.error(f"Error handling request: {e}")
+                tb = traceback.format_exc()
+                self.logger.error(f"Error handling request: {e}\r\n{tb}")
                 response = ServerResponse(2, "Internal Server Error", "An error occurred while handling your request.")
                 self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
                 conn.send(socket_message(response.build()))
