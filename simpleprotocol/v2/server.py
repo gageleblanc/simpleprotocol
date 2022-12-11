@@ -11,7 +11,7 @@ import ssl
 
 
 class PupServer:
-    def __init__(self, bind_address: str, bind_port: int, secure_bind_port: int = None, timeout: int = 30, ssl_enabled: bool = False, ssl_cert: str = None, ssl_key: str = None, plaintext_disabled: bool = False, logger_name: str = None, logger_desc: str = None, debug: bool = False):
+    def __init__(self, bind_address: str, bind_port: int, secure_bind_port: int = None, timeout: int = 30, ssl_enabled: bool = False, ssl_cert: str = None, ssl_key: str = None, plaintext_disabled: bool = False, logger_name: str = None, logger_desc: str = None, logging_level: str = None):
         """
         :param bind_address: The address to bind to.
         :param bind_port: The port to bind to.
@@ -27,13 +27,16 @@ class PupServer:
         self.ssl_cert = ssl_cert
         self.ssl_key = ssl_key
         self.timeout = timeout
-        self.debug = debug
+        if logging_level is None:
+            logging_level = "server"
+        Logging.add_logging_level("SERVER", 19)
+        Logging.add_logging_level("ACCESS", 18)
         self.running = True
         if logger_name is None:
             logger_name = "PupServer"
         if logger_desc is None:
             logger_desc = "Server"
-        self.logger = Logging(logger_name, logger_desc, debug=debug).get_logger()
+        self.logger = Logging(logger_name, logger_desc, logging_level=logging_level).get_logger()
         self.secure_bind_port = secure_bind_port
         if not self.ssl_enabled and self.plaintext_disabled:
             raise ValueError("Cannot disable plaintext if SSL is disabled")
@@ -169,20 +172,20 @@ class PupServer:
                 if not isinstance(response, ServerResponse):
                     self.logger.error(f"Handler for {request.path} did not return a ServerResponse")
                     response = ServerResponse(2, "Internal Server Error", "An error occurred while handling your request.")
-                    self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
+                    self.logger.access(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
                     conn.send(socket_message(response.build()))
                     return
-                self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
+                self.logger.access(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
                 conn.send(socket_message(response.build()))
             except Exception as e:
                 tb = traceback.format_exc()
                 self.logger.error(f"Error handling request: {e}\r\n{tb}")
                 response = ServerResponse(2, "Internal Server Error", "An error occurred while handling your request.")
-                self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
+                self.logger.access(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
                 conn.send(socket_message(response.build()))
         else:
             response = ServerResponse(1, "Not Found", "No handler was found for the requested path.")
-            self.logger.info(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
+            self.logger.access(f"({addr[0]}:{addr[1]}) {response.status} - {request.path}")
             conn.send(socket_message(response.build()))
         if "Files" in request.parameters:
             for f, path in request.parameters["Files"].items():
@@ -203,7 +206,7 @@ class PupServer:
         while self.running:
             try:
                 conn, addr = sck.accept()
-                self.logger.info(f"Accepted connection from {addr[0]}:{addr[1]}")
+                self.logger.access(f"Accepted connection from {addr[0]}:{addr[1]}")
                 thread = threading.Thread(target=self.handle_connection, args=(conn, addr))
                 thread.start()
             except socket.timeout:
@@ -219,7 +222,7 @@ class PupServer:
         if not self.ssl_enabled:
             self.logger.error("SSL is not enabled")
             return
-        self.logger.info(f"Starting secure server on port {self.bind_address}:{self.secure_bind_port}")
+        self.logger.server(f"Starting secure server on port {self.bind_address}:{self.secure_bind_port}")
         self.secure_socket.bind((self.bind_address, self.secure_bind_port))
         self.secure_socket.listen(5)
         self.secure_socket.settimeout(self.timeout)
@@ -229,7 +232,7 @@ class PupServer:
         """
         Start the server.
         """
-        self.logger.info(f"Starting server on port {self.bind_address}:{self.bind_port}")
+        self.logger.server(f"Starting server on port {self.bind_address}:{self.bind_port}")
         self.plaintext_socket.bind((self.bind_address, self.bind_port))
         self.plaintext_socket.listen(5)
         self.plaintext_socket.settimeout(self.timeout)
@@ -249,15 +252,15 @@ class PupServer:
             try:
                 time.sleep(1)
                 if not self.plaintext_disabled and not plaintext_thread.is_alive():
-                    self.logger.error("Plaintext server thread died, restarting...")
+                    self.logger.server("Plaintext server thread died, restarting...")
                     plaintext_thread = threading.Thread(target=self._run)
                     plaintext_thread.start()
                 if self.ssl_enabled and not secure_thread.is_alive():
-                    self.logger.error("Secure server thread died, restarting...")
+                    self.logger.server("Secure server thread died, restarting...")
                     secure_thread = threading.Thread(target=self._run_secure)
                     secure_thread.start()
             except KeyboardInterrupt:
-                self.logger.info("Shutting down server...")
+                self.logger.server("Shutting down server...")
                 self.running = False
                 break
             except Exception as e:
