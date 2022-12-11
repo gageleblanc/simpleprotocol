@@ -14,14 +14,19 @@ class SimpleProtocolServer:
         "VALUE",
         "TYPE"
     ]
-    def __init__(self, host: str = "127.0.0.1", port: int = 3893, debug: bool = False, server_name: str = "DefaultServerName"):
+    def __init__(self, host: str = "127.0.0.1", port: int = 3893, logging_level: str = None, server_name: str = "DefaultServerName"):
         self.bind_host = host
         self.bind_port = port
         self.running = False
+        self.server_name = server_name
         self._methods = dict()
         self._middleware = list()
         self._methods = {}
-        self.logger = Logging(server_name, "SimpleProtocolServer", debug=debug).get_logger()
+        if logging_level is None:
+            logging_level = "server"
+        Logging.add_logging_level("SERVER", 19)
+        Logging.add_logging_level("ACCESS", 18)
+        self.logger = Logging(server_name, "SimpleProtocolServer", logging_level=logging_level).get_logger()
 
     def register_header(self, header: Union[str, list]):
         if type(header) == list:
@@ -38,7 +43,7 @@ class SimpleProtocolServer:
             self._methods.update(**handler)
         else:
             raise TypeError("Handler supplied is not callable or dict of callables.")
-        self.logger.info("Registered handlers: %s" % ", ".join(self._methods.keys()))
+        self.logger.server("Registered handlers: %s" % ", ".join(self._methods.keys()))
 
     # Accept single registration or dictionary of middleware to register
     def register_middleware(self, middleware):
@@ -55,7 +60,7 @@ class SimpleProtocolServer:
             s.bind((self.bind_host, self.bind_port))
             s.listen()
             s.settimeout(15)
-            self.logger.info("Simple Protocol Server Listening on %s:%d" % (self.bind_host, self.bind_port))
+            self.logger.info("%s Server Listening on %s:%d" % (self.server_name, self.bind_host, self.bind_port))
             while self.running:
                 try:
                     conn, addr = s.accept()
@@ -67,7 +72,7 @@ class SimpleProtocolServer:
 
     def accept_client(self, conn, addr):
         with conn:
-            self.logger.info("Connected by %s" % ":".join(str(i) for i in addr))
+            self.logger.access("Connected by %s" % ":".join(str(i) for i in addr))
             rec = conn.recv(8)
             data = rec
             while self.running:
@@ -99,11 +104,11 @@ class SimpleProtocolServer:
             if processed is not None and type(processed) == GenericRequestParser:
                 request = processed
             else:
-                self.logger.info("%s middleware canceled request" % m.__name__)
+                self.logger.access("%s middleware canceled request" % m.__name__)
                 return GenericTxBuilder(status=500, response="%s canceled middleware request" % m.__name__)
         res = self._methods[request.method.lower()](request)
         # Handler needs to return an instance of GenericTxBuilder
         if not isinstance(res, GenericTxBuilder):
             res = GenericTxBuilder(status=400, response="Handler did not return response object.")
-        self.logger.info("Status %d for request with method [%s] (Response: %s)" % (res.status, request.method, res.response))
+        self.logger.access("Status %d for request with method [%s] (Response: %s)" % (res.status, request.method, res.response))
         return res
