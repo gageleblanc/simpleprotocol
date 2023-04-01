@@ -63,6 +63,8 @@ class ServerRequest:
             if key in self.parameters:
                 continue
             self.parameters[key] = value
+        if self.body is not None:
+            self.body = self.body.strip()
         if "Content-Type" in self.parameters:
             if self.parameters["Content-Type"] == "application/json":
                 self.json_body = True
@@ -171,6 +173,8 @@ class ClientResponse:
             if key in self.parameters:
                 continue
             self.parameters[key] = value
+        if self.body is not None:
+            self.body = self.body.strip()
         if "Content-Type" in self.parameters:
             if self.parameters["Content-Type"] == "application/json":
                 self.json_body = True

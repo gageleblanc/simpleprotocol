@@ -45,14 +45,58 @@ def socket_message(message: str):
     Format message for socket
     :param message: The message to format.
     """
+    return v2_message(message)
     msg = f"{message}{TERMINATOR.decode()}"
     return msg.encode("utf-8")
+
+def v2_message(message: str):
+    """
+    Version 2 of the message format.
+    :param message: The message to send.
+    """
+    # Encode the message as bytes, then base64.
+    message = message.encode("utf-8")
+    message = base64.b64encode(message)
+    # Create header containing the length of the message.
+    header = f"{len(message)}".encode("utf-8")
+    header = base64.b64encode(header)
+    # Create the payload.
+    payload = header + b"." + message
+    return payload
+
+def v2_receive_data(conn: socket.socket):
+    """
+    Receive data from a socket connection.
+    :param conn: The socket connection.
+    """
+    header = b""
+    data = b""
+    while True:
+        _b = conn.recv(1)
+        if _b == b".": # End of header
+            break
+        header += _b
+    header_raw = base64.b64decode(header)
+    header_decoded = header_raw.decode("utf-8")
+    message_size = int(header_decoded)
+    while True:
+        data += conn.recv(1024)
+        if not data:
+            return None
+        if len(data) >= message_size:
+            if len(data) > message_size:
+                print(f"[{conn.getsockname()}] - Received more data than expected.")
+            break
+    data = base64.b64decode(data)
+    data = data.strip(TERMINATOR)
+    return data.decode("utf-8")
 
 def receive_data(conn: socket.socket):
     """
     Receive data from a socket connection.
     :param conn: The socket connection.
     """
+    return v2_receive_data(conn)
     data = b""
     while True:
         data += conn.recv(1024)

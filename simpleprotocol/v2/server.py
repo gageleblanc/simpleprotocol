@@ -124,7 +124,7 @@ class PupServer:
             try:
                 mdw_result = func(request=request)
                 if isinstance(mdw_result, ServerResponse):
-                    self.logger.info(f"({addr[0]}:{addr[1]}): ({func.__name__}) Middleware returned response, sending response")
+                    self.logger.access(f"({addr[0]}:{addr[1]}): ({func.__name__}) Middleware returned response, sending response")
                     conn.send(socket_message(mdw_result.build()))
                     return
                 elif mdw_result is None:
