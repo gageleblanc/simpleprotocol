@@ -87,6 +87,8 @@ class ServerResponse:
         self.body = body
         self.json_body = json_body
         self.parameters = parameters
+        if isinstance(self.body, dict):
+            self.json_body = True
         if "Content-Type" in self.parameters:
             if self.parameters["Content-Type"] == "application/json":
                 self.json_body = True
@@ -197,6 +199,8 @@ class ClientRequest:
         self.body = body
         self.json_body = json_body
         self.parameters = parameters
+        if isinstance(self.body, dict):
+            self.json_body = True
         if "Content-Type" in self.parameters:
             if self.parameters["Content-Type"] == "application/json":
                 self.json_body = True
